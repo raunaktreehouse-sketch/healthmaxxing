@@ -1,210 +1,200 @@
-import Link from 'next/link'
-import { ArrowRight, Users, MessageSquare, TrendingUp, Shield, Zap, Star } from 'lucide-react'
+import Link from "next/link"
+import { ArrowRight, Dna, FlaskConical, Heart, Users, MessageSquare, TrendingUp, Shield, Zap, Brain } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { db } from "@/lib/db"
+import { PostCard } from "@/components/forum/PostCard"
+import { CategoryCard } from "@/components/forum/CategoryCard"
 
-const stats = [
-  { label: 'Community Members', value: '12,400+' },
-  { label: 'Daily Discussions', value: '340+' },
-  { label: 'Articles Published', value: '2,800+' },
-  { label: 'Success Stories', value: '5,000+' },
-]
+async function getHomeData() {
+  try {
+    const [recentPosts, categories, stats] = await Promise.all([
+      db.post.findMany({
+        take: 6,
+        orderBy: { createdAt: "desc" },
+        include: {
+          author: { select: { id: true, name: true, image: true, username: true } },
+          category: true,
+          _count: { select: { comments: true, votes: true } },
+        },
+      }),
+      db.category.findMany({
+        include: { _count: { select: { posts: true } } },
+        take: 8,
+      }),
+      Promise.all([
+        db.user.count(),
+        db.post.count(),
+        db.comment.count(),
+      ])
+    ])
+    return { recentPosts, categories, stats: { users: stats[0], posts: stats[1], comments: stats[2] } }
+  } catch {
+    return {
+      recentPosts: [],
+      categories: [],
+      stats: { users: 0, posts: 0, comments: 0 }
+    }
+  }
+}
 
-const categories = [
-  {
-    icon: '💪',
-    title: 'Physical Optimization',
-    description: 'Maximize your physique through evidence-based training, nutrition, and recovery protocols.',
-    threads: 1240,
-    href: '/forums/physical',
-  },
-  {
-    icon: '✨',
-    title: 'Aesthetics & Skincare',
-    description: 'Science-backed skincare, grooming, and appearance enhancement techniques.',
-    threads: 890,
-    href: '/forums/aesthetics',
-  },
-  {
-    icon: '🧠',
-    title: 'Mental Performance',
-    description: 'Cognitive enhancement, sleep optimization, and mental health strategies.',
-    threads: 670,
-    href: '/forums/mental',
-  },
-  {
-    icon: '🍎',
-    title: 'Nutrition & Diet',
-    description: 'Evidence-based dietary approaches, supplementation, and metabolic health.',
-    threads: 1100,
-    href: '/forums/nutrition',
-  },
-  {
-    icon: '😴',
-    title: 'Recovery & Sleep',
-    description: 'Optimize sleep quality, recovery protocols, and hormonal health.',
-    threads: 450,
-    href: '/forums/recovery',
-  },
-  {
-    icon: '🔬',
-    title: 'Research & Science',
-    description: 'Deep dives into studies, clinical trials, and emerging research.',
-    threads: 320,
-    href: '/forums/research',
-  },
-]
+export default async function HomePage() {
+  const { recentPosts, categories, stats } = await getHomeData()
 
-const features = [
-  {
-    icon: <Shield className="w-5 h-5" />,
-    title: 'Evidence-Based',
-    description: 'All advice backed by scientific research and peer-reviewed studies.',
-  },
-  {
-    icon: <Users className="w-5 h-5" />,
-    title: 'Supportive Community',
-    description: 'Connect with thousands of like-minded individuals on their improvement journey.',
-  },
-  {
-    icon: <Zap className="w-5 h-5" />,
-    title: 'Expert Insights',
-    description: 'Learn from members who have achieved real, measurable results.',
-  },
-  {
-    icon: <Star className="w-5 h-5" />,
-    title: 'Curated Content',
-    description: 'High-quality threads and guides vetted by our community moderators.',
-  },
-]
-
-export default function HomePage() {
   return (
-    <div className="bg-mesh">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-24 pb-20 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-full px-4 py-1.5 text-sm text-zinc-400 mb-8">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-            Community is live — Join the discussion
-          </div>
-          
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-tight">
-            Optimize Every Aspect
-            <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-300">
-              of Your Biology
-            </span>
-          </h1>
-          
-          <p className="text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            The premier community for science-backed health optimization, aesthetics improvement, 
-            and human performance. Evidence-based. No broscience.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link 
-              href="/forums"
-              className="inline-flex items-center gap-2 bg-amber-100 text-black px-8 py-3.5 rounded-lg font-semibold hover:bg-white transition-colors"
-            >
-              Explore Forums <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link 
-              href="/auth/register"
-              className="inline-flex items-center gap-2 glass px-8 py-3.5 rounded-lg font-medium text-zinc-300 hover:text-white transition-colors"
-            >
-              Create Account
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="border-y border-zinc-900 py-12 px-4">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
-          {stats.map((stat) => (
-            <div key={stat.label} className="text-center">
-              <div className="text-3xl font-bold text-amber-200 mb-1">{stat.value}</div>
-              <div className="text-sm text-zinc-500">{stat.label}</div>
+    <div className="flex flex-col">
+      {/* Hero */}
+      <section className="relative overflow-hidden bg-background border-b border-border">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-[0.03]" />
+        <div className="container mx-auto px-4 py-20 md:py-32 relative">
+          <div className="max-w-4xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted rounded-full text-sm text-muted-foreground mb-6 border border-border">
+              <Zap className="w-3.5 h-3.5" />
+              Science-backed optimization
             </div>
-          ))}
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.1]">
+              Optimize Every
+              <br />
+              <span className="relative">
+                Aspect of Health
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-foreground/10 rounded" />
+              </span>
+            </h1>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl leading-relaxed">
+              Join a community of evidence-based health optimizers. Discuss skincare, fitness, nutrition, 
+              longevity, and everything in between — backed by science, not bro-science.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <Button asChild size="lg" className="rounded-full px-8">
+                <Link href="/forum">
+                  Explore Forum
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="rounded-full px-8">
+                <Link href="/auth/signin">Join Community</Link>
+              </Button>
+            </div>
+
+            {/* Stats */}
+            <div className="flex gap-8 mt-12 pt-8 border-t border-border">
+              {[
+                { value: stats.users.toLocaleString() || "1.2K+", label: "Members" },
+                { value: stats.posts.toLocaleString() || "8.4K+", label: "Discussions" },
+                { value: stats.comments.toLocaleString() || "42K+", label: "Replies" },
+              ].map((stat) => (
+                <div key={stat.label}>
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <div className="text-sm text-muted-foreground">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Forum Categories */}
-      <section className="py-20 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-3">Explore Communities</h2>
-            <p className="text-zinc-400">Dive into specialized forums for every aspect of self-improvement</p>
+      {/* Categories */}
+      <section className="py-16 border-b border-border">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl font-bold">Browse Topics</h2>
+              <p className="text-muted-foreground mt-1">Find your niche in health optimization</p>
+            </div>
+            <Button asChild variant="ghost" className="text-sm">
+              <Link href="/forum">View all <ArrowRight className="ml-1 w-3.5 h-3.5" /></Link>
+            </Button>
           </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {categories.map((cat) => (
-              <Link
-                key={cat.title}
-                href={cat.href}
-                className="group glass rounded-xl p-6 hover:border-amber-200/20 transition-all hover:bg-white/5"
-              >
-                <div className="text-3xl mb-3">{cat.icon}</div>
-                <h3 className="font-semibold text-white mb-2 group-hover:text-amber-200 transition-colors">
-                  {cat.title}
-                </h3>
-                <p className="text-sm text-zinc-500 mb-4 leading-relaxed">{cat.description}</p>
-                <div className="flex items-center gap-1.5 text-xs text-zinc-600">
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  <span>{cat.threads.toLocaleString()} threads</span>
-                </div>
-              </Link>
-            ))}
+          {categories.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {categories.map((cat) => (
+                <CategoryCard key={cat.id} category={cat} />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {defaultCategories.map((cat) => (
+                <Link key={cat.slug} href={`/forum/${cat.slug}`}
+                  className="group p-4 rounded-xl border border-border hover:border-foreground/20 hover:bg-muted/50 transition-all">
+                  <div className="text-2xl mb-2">{cat.icon}</div>
+                  <div className="font-medium text-sm">{cat.name}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{cat.desc}</div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Recent Posts */}
+      <section className="py-16 border-b border-border">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl font-bold">Recent Discussions</h2>
+              <p className="text-muted-foreground mt-1">See what the community is talking about</p>
+            </div>
+            <Button asChild variant="ghost" className="text-sm">
+              <Link href="/forum">All posts <ArrowRight className="ml-1 w-3.5 h-3.5" /></Link>
+            </Button>
           </div>
-          
-          <div className="text-center mt-8">
-            <Link 
-              href="/forums"
-              className="inline-flex items-center gap-2 text-amber-200 hover:text-amber-100 font-medium transition-colors"
-            >
-              View all forums <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
+          {recentPosts.length > 0 ? (
+            <div className="grid gap-4">
+              {recentPosts.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16 text-muted-foreground">
+              <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-20" />
+              <p className="text-lg font-medium">No discussions yet</p>
+              <p className="text-sm mt-1">Be the first to start a conversation</p>
+              <Button asChild className="mt-4">
+                <Link href="/forum/new">Start a Discussion</Link>
+              </Button>
+            </div>
+          )}
         </div>
       </section>
 
       {/* Features */}
-      <section className="py-20 px-4 border-t border-zinc-900">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-3">Why Healthmaxxing?</h2>
-            <p className="text-zinc-400">Built for serious optimizers who demand evidence over anecdote</p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature) => (
-              <div key={feature.title} className="glass rounded-xl p-6">
-                <div className="w-10 h-10 rounded-lg bg-amber-200/10 flex items-center justify-center text-amber-200 mb-4">
-                  {feature.icon}
+      <section className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl font-bold text-center mb-12">Why HealthMaxxing?</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            {features.map((f) => (
+              <div key={f.title} className="flex gap-4">
+                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-foreground text-background flex items-center justify-center">
+                  <f.icon className="w-5 h-5" />
                 </div>
-                <h3 className="font-semibold mb-2">{feature.title}</h3>
-                <p className="text-sm text-zinc-500 leading-relaxed">{feature.description}</p>
+                <div>
+                  <h3 className="font-semibold mb-1">{f.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
-
-      {/* CTA */}
-      <section className="py-20 px-4">
-        <div className="max-w-3xl mx-auto text-center glass rounded-2xl p-12">
-          <h2 className="text-3xl font-bold mb-4">Ready to Start Optimizing?</h2>
-          <p className="text-zinc-400 mb-8">
-            Join thousands of members who are already on their journey to peak performance.
-          </p>
-          <Link 
-            href="/auth/register"
-            className="inline-flex items-center gap-2 bg-amber-100 text-black px-8 py-3.5 rounded-lg font-semibold hover:bg-white transition-colors"
-          >
-            Join the Community <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </section>
     </div>
   )
 }
+
+const defaultCategories = [
+  { name: "Skincare & Appearance", slug: "skincare", icon: "✨", desc: "Evidence-based skincare" },
+  { name: "Fitness & Training", slug: "fitness", icon: "💪", desc: "Optimize your physique" },
+  { name: "Nutrition & Diet", slug: "nutrition", icon: "🥗", desc: "Dietary optimization" },
+  { name: "Sleep & Recovery", slug: "sleep", icon: "😴", desc: "Sleep science" },
+  { name: "Longevity", slug: "longevity", icon: "🧬", desc: "Live longer, better" },
+  { name: "Mental Performance", slug: "mental", icon: "🧠", desc: "Cognitive enhancement" },
+  { name: "Supplements", slug: "supplements", icon: "💊", desc: "Evidence-based supps" },
+  { name: "General Discussion", slug: "general", icon: "💬", desc: "Everything health" },
+]
+
+const features = [
+  { icon: FlaskConical, title: "Evidence-Based", desc: "Every claim is backed by peer-reviewed research. No pseudoscience, no gimmicks — just rigorous health optimization." },
+  { icon: Users, title: "Expert Community", desc: "Connect with doctors, researchers, athletes, and dedicated health optimizers who share their knowledge freely." },
+  { icon: Shield, title: "Quality Moderation", desc: "Dedicated moderators ensure all content meets our scientific standards and community guidelines." },
+  { icon: MessageSquare, title: "Rich Discussions", desc: "Share images, cite studies, and have in-depth conversations about every aspect of health optimization." },
+  { icon: TrendingUp, title: "Track Progress", desc: "Share your journey, document your progress, and get feedback from the community." },
+  { icon: Brain, title: "Comprehensive Topics", desc: "From skincare and fitness to longevity and mental performance — we cover it all." },
+]
