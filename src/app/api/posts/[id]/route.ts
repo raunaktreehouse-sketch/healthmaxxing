@@ -1,49 +1,78 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getPosts, addReply, ForumReply } from '@/lib/store'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/auth"
+import { db } from "@/lib/db"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-  const posts = getPosts()
-  const post = posts.find(p => p.id === params.id)
-  
+export async function GET(
+    request: NextRequest,
+  { params }: { params: { id: string } }
+  ) {
+    const post = await db.post.findUnique({
+          where: { id: params.id },
+          include: {
+                  author: { select: { id: true, name: true, image: true, username: true } },
+                  category: true,
+                  tags: true,
+                  comments: {
+                            include: {
+                                        author: { select: { id: true, name: true, image: true, username: true } },
+                                        likes: true,
+                                        replies: {
+                                                      include: {
+                                                                      author: { select: { id: true, name: true, image: true, username: true } },
+                                                                      likes: true,
+                                                      },
+                                        },
+                            },
+                            where: { parentId: null },
+                            orderBy: { createdAt: "asc" },
+                  },
+                  votes: true,
+                  _count: { select: { comments: true, votes: true } },
+          },
+    })
+
   if (!post) {
-    return NextResponse.json({ error: 'Post not found' }, { status: 404 })
+        return NextResponse.json({ error: "Post not found" }, { status: 404 })
   }
-  
-  // Increment views
-  post.views++
-  
+
+  await db.post.update({
+        where: { id: params.id },
+        data: { viewCount: { increment: 1 } },
+  })
+
   return NextResponse.json({ post })
 }
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-  }
-  
+export async function POST(
+    request: NextRequest,
+  { params }: { params: { id: string } }
+  ) {
+    const session = await auth()
+    if (!session?.user?.id) {
+          return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+
   try {
-    const { content } = await request.json()
-    
-    if (!content || content.trim().length < 3) {
-      return NextResponse.json({ error: 'Reply content is required' }, { status: 400 })
-    }
-    
-    const reply: ForumReply = {
-      id: Date.now().toString(),
-      content: content.substring(0, 5000),
-      author: session.user.name || 'Anonymous',
-      authorId: (session.user as any).id || '0',
-      createdAt: new Date().toISOString(),
-      likes: 0,
-      postId: params.id,
-    }
-    
-    addReply(params.id, reply)
-    
-    return NextResponse.json({ reply }, { status: 201 })
+        const { content } = await request.json()
+
+      if (!content || content.trim().length < 3) {
+              return NextResponse.json({ error: "Reply content is required" }, { status: 400 })
+      }
+
+      const comment = await db.comment.create({
+              data: {
+                        content: content.substring(0, 5000),
+                        authorId: session.user.id,
+                        postId: params.id,
+              },
+              include: {
+                        author: { select: { id: true, name: true, image: true, username: true } },
+              },
+      })
+
+      return NextResponse.json({ comment }, { status: 201 })
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        console.error(error)
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
