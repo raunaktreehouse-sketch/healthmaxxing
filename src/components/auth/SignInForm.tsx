@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 
-export function SignInForm() {
+function SignInFormInner() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -22,10 +22,7 @@ export function SignInForm() {
     setError("")
     try {
       const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-        callbackUrl,
+        email, password, redirect: false, callbackUrl,
       })
       if (result?.error) {
         setError("Invalid email or password")
@@ -49,8 +46,6 @@ export function SignInForm() {
       {error && (
         <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-lg p-3">{error}</div>
       )}
-
-      {/* OAuth */}
       <div className="space-y-2">
         <Button variant="outline" className="w-full justify-center gap-3 h-11" onClick={() => handleOAuth("google")}>
           <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -65,12 +60,10 @@ export function SignInForm() {
           Continue with GitHub
         </Button>
       </div>
-
       <div className="relative">
         <Separator />
         <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">or</span>
       </div>
-
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="space-y-1.5">
           <Label htmlFor="email">Email</Label>
@@ -78,12 +71,20 @@ export function SignInForm() {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="password">Password</Label>
-          <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
+          <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required />
         </div>
         <Button type="submit" className="w-full h-11 rounded-full" disabled={isLoading}>
           {isLoading ? "Signing in..." : "Sign In"}
         </Button>
       </form>
     </div>
+  )
+}
+
+export function SignInForm() {
+  return (
+    <Suspense fallback={<div className="border border-border rounded-2xl p-6 animate-pulse h-64" />}>
+      <SignInFormInner />
+    </Suspense>
   )
 }
