@@ -1,85 +1,101 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 9, 9, 11;
-  --background-end-rgb: 9, 9, 11;
-  --accent: #c8a97e;
-  --accent-light: #e2c99e;
-}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
 
-* {
-  box-sizing: border-box;
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-start-rgb));
-  font-family: 'Inter', sans-serif;
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 8%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 8%;
+    --primary: 0 0% 8%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 8%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 8%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 8%;
+    --radius: 0.5rem;
   }
-  .bg-mesh {
-    background-image: 
-      radial-gradient(ellipse at 20% 50%, rgba(200, 169, 126, 0.07) 0%, transparent 60%),
-      radial-gradient(ellipse at 80% 20%, rgba(200, 169, 126, 0.05) 0%, transparent 60%);
-  }
-  .glass {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-  }
-  .text-accent {
-    color: var(--accent);
-  }
-  .border-accent {
-    border-color: var(--accent);
+
+  .dark {
+    --background: 0 0% 4%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 0 0% 95%;
+    --primary-foreground: 0 0% 8%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 55%;
+    --accent: 0 0% 12%;
+    --accent-foreground: 0 0% 95%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14%;
+    --input: 0 0% 14%;
+    --ring: 0 0% 80%;
   }
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #09090b;
-}
-::-webkit-scrollbar-thumb {
-  background: #27272a;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
 }
 
-/* Prose styles */
-.prose-dark {
-  color: #a1a1aa;
-}
-.prose-dark h1, .prose-dark h2, .prose-dark h3 {
-  color: #f4f4f5;
-}
-.prose-dark a {
-  color: var(--accent);
+@layer components {
+  .prose-content p {
+    @apply mb-4 leading-relaxed;
+  }
+  .prose-content h2 {
+    @apply text-xl font-bold mb-3 mt-6;
+  }
+  .prose-content ul {
+    @apply list-disc list-inside mb-4 space-y-1;
+  }
+  .prose-content ol {
+    @apply list-decimal list-inside mb-4 space-y-1;
+  }
+  .prose-content blockquote {
+    @apply border-l-4 border-border pl-4 italic text-muted-foreground;
+  }
+  .prose-content code {
+    @apply bg-muted px-1.5 py-0.5 rounded text-sm font-mono;
+  }
+  .forum-gradient {
+    background: linear-gradient(135deg, #f8f8f8 0%, #ffffff 50%, #f0f0f0 100%);
+  }
+  .dark .forum-gradient {
+    background: linear-gradient(135deg, #0a0a0a 0%, #111111 50%, #0d0d0d 100%);
+  }
 }
 
-/* Animation */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in-up {
-  animation: fadeInUp 0.6s ease-out forwards;
-}
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
+
+/* Selection */
+::selection { background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
